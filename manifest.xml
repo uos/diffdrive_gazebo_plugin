@@ -1,0 +1,20 @@
+<package>
+  <description brief="Gazebo plugins for the KURT robot">
+
+    This package provides Gazebo plugins for the KURT robot. It is based on turtlebot_gazebo_plugins by Nate Koenig.
+
+  </description>
+  <author>Martin Günther</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/kurt_gazebo_plugins</url>
+  <depend package="gazebo"/>
+  <depend package="nav_msgs"/>
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" />
+    <gazebo plugin_path="${prefix}/lib" />
+  </export>
+</package>
