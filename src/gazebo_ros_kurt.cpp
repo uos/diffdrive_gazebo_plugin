@@ -147,12 +147,19 @@ void GazeboRosKurt::UpdateChild()
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
 
-  // TODO: are only the middle wheels powered?
-  joints_[LEFT]->SetVelocity(0, wheel_speed_left_ / (wd / 2.0));
-  joints_[RIGHT]->SetVelocity(0, wheel_speed_right_ / (wd / 2.0));
+  // turn left wheels
+  for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
+  {
+    joints_[i]->SetVelocity(0, wheel_speed_left_ / (wd / 2.0));
+    joints_[i]->SetMaxForce(0, **(torqueP_));
+  }
 
-  joints_[LEFT]->SetMaxForce(0, **(torqueP_));
-  joints_[RIGHT]->SetMaxForce(0, **(torqueP_));
+  // turn right wheels
+  for (unsigned short i = NUM_JOINTS/2; i < NUM_JOINTS; i++)
+  {
+    joints_[i]->SetVelocity(0, wheel_speed_right_ / (wd / 2.0));
+    joints_[i]->SetMaxForce(0, **(torqueP_));
+  }
 
   nav_msgs::Odometry odom;
   odom.header.stamp = ros::Time::now();
