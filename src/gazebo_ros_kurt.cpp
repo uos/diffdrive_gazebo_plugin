@@ -40,7 +40,8 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
   joint_nameP_.push_back(new ParamT<std::string> ("right_rear_wheel_joint", "body_to_wheel_right_rear", 1));
   wheel_sepP_ = new ParamT<float> ("wheel_separation", 0.34, 1);
   wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
-  torqueP_ = new ParamT<float> ("torque", 10.0, 1);
+  turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
+  torqueP_ = new ParamT<float> ("torque", 2.0, 1);
   Param::End();
 
   wheel_speed_right_ = 0.0;
@@ -56,6 +57,7 @@ GazeboRosKurt::~GazeboRosKurt()
 {
   delete wheel_diamP_;
   delete wheel_sepP_;
+  delete turning_adaptationP_;
   delete torqueP_;
   delete node_namespaceP_;
 
@@ -72,6 +74,7 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
   node_namespaceP_->Load(node);
   wheel_sepP_->Load(node);
   wheel_diamP_->Load(node);
+  turning_adaptationP_->Load(node);
   torqueP_->Load(node);
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
@@ -119,10 +122,12 @@ void GazeboRosKurt::UpdateChild()
   double wd, ws;
   double d1, d2;
   double dr, da;
+  double turning_adaptation;
   Time step_time;
 
   wd = **(wheel_diamP_);
   ws = **(wheel_sepP_);
+  turning_adaptation = **(turning_adaptationP_);
 
   d1 = d2 = 0;
   dr = da = 0;
@@ -135,7 +140,7 @@ void GazeboRosKurt::UpdateChild()
   d2 = step_time.Double() * (wd / 2) * joints_[RIGHT]->GetVelocity(0);
 
   dr = (d1 + d2) / 2;
-  da = (d2 - d1) / ws;
+  da = (d2 - d1) / ws * turning_adaptation;
 
   // Compute odometric pose
   odom_pose_[0] += dr * cos(odom_pose_[2]);
@@ -187,6 +192,7 @@ void GazeboRosKurt::UpdateChild()
   memcpy(&odom.pose.covariance[0], pose_cov, sizeof(double) * 36);
   memcpy(&odom.twist.covariance[0], pose_cov, sizeof(double) * 36);
 
+  // TODO: why is this all 0? shouldn't this be filled in using odom_vel? (was copied like this from turtlebot)
   odom.twist.twist.linear.x = 0;
   odom.twist.twist.linear.y = 0;
   odom.twist.twist.linear.z = 0;

@@ -46,6 +46,9 @@ private:
   /// Diameter of the wheels
   ParamT<float> *wheel_diamP_;
 
+  /// Turning adaptation for odometry
+  ParamT<float> *turning_adaptationP_;
+
   /// Torque applied to the wheels
   ParamT<float> *torqueP_;
 
