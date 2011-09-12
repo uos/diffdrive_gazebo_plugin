@@ -32,12 +32,12 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
 
   Param::Begin(&this->parameters);
   node_namespaceP_ = new ParamT<std::string> ("node_namespace", "", 0);
-  joint_nameP_.push_back(new ParamT<std::string> ("left_front_wheel_joint", "body_to_wheel_left_front", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("left_middle_wheel_joint", "body_to_wheel_left_middle", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("left_rear_wheel_joint", "body_to_wheel_left_rear", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_front_wheel_joint", "body_to_wheel_right_front", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_middle_wheel_joint", "body_to_wheel_right_middle", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_rear_wheel_joint", "body_to_wheel_right_rear", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("left_front_wheel_joint", "left_front_wheel_joint", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("left_middle_wheel_joint", "left_middle_wheel_joint", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("left_rear_wheel_joint", "left_rear_wheel_joint", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("right_front_wheel_joint", "right_front_wheel_joint", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("right_middle_wheel_joint", "right_middle_wheel_joint", 1));
+  joint_nameP_.push_back(new ParamT<std::string> ("right_rear_wheel_joint", "right_rear_wheel_joint", 1));
   wheel_sepP_ = new ParamT<float> ("wheel_separation", 0.34, 1);
   wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
   turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
