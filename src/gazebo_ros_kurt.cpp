@@ -168,7 +168,7 @@ void GazeboRosKurt::UpdateChild()
 
   nav_msgs::Odometry odom;
   odom.header.stamp = ros::Time::now();
-  odom.header.frame_id = "odom";
+  odom.header.frame_id = "odom_combined";
   odom.child_frame_id = "base_footprint";
   odom.pose.pose.position.x = odom_pose_[0];
   odom.pose.pose.position.y = odom_pose_[1];
