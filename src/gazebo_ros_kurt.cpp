@@ -41,7 +41,7 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
   wheel_sepP_ = new ParamT<float> ("wheel_separation", 0.34, 1);
   wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
   turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
-  torqueP_ = new ParamT<float> ("torque", 2.0, 1);
+  torqueP_ = new ParamT<float> ("torque", 20.0, 1);
   Param::End();
 
   wheel_speed_right_ = 0.0;
@@ -106,6 +106,8 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
     js_.velocity.push_back(0);
     js_.effort.push_back(0);
   }
+
+  ROS_INFO("gazebo_ros_kurt plugin initialized");
 }
 
 void GazeboRosKurt::InitChild()
@@ -151,6 +153,8 @@ void GazeboRosKurt::UpdateChild()
   odom_vel_[0] = dr / step_time.Double();
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
+
+  ROS_DEBUG("gazebo_ros_kurt: setting wheel speeds (left; %f, right: %f)", wheel_speed_left_ / (wd / 2.0), wheel_speed_right_ / (wd / 2.0));
 
   // turn left wheels
   for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
