@@ -27,6 +27,7 @@ public:
 
 private:
   static const size_t NUM_JOINTS = 6;
+  static const double CMD_VEL_TIMEOUT = 0.6;
 
   void OnCmdVel(const geometry_msgs::TwistConstPtr &msg);
 
@@ -62,6 +63,9 @@ private:
 
   // Simulation time of the last update
   Time prev_update_time_;
+
+  // Simulation time when the last cmd_vel command was received (for timeout)
+  Time last_cmd_vel_time_;
 
   float odom_pose_[3];
   float odom_vel_[3];

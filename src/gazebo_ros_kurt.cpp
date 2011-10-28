@@ -154,6 +154,12 @@ void GazeboRosKurt::UpdateChild()
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
 
+  if (Simulator::Instance()->GetSimTime() > last_cmd_vel_time_ + Time(CMD_VEL_TIMEOUT))
+  {
+	ROS_DEBUG("gazebo_ros_kurt: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", Simulator::Instance()->GetSimTime().Double(), last_cmd_vel_time_.Double(), Time(CMD_VEL_TIMEOUT).Double());
+	wheel_speed_left_ = wheel_speed_right_ = 0.0;
+  }
+
   ROS_DEBUG("gazebo_ros_kurt: setting wheel speeds (left; %f, right: %f)", wheel_speed_left_ / (wd / 2.0), wheel_speed_right_ / (wd / 2.0));
 
   // turn left wheels
@@ -226,4 +232,6 @@ void GazeboRosKurt::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
 
   wheel_speed_left_ = vr - va * **(wheel_sepP_) / 2;
   wheel_speed_right_ = vr + va * **(wheel_sepP_) / 2;
+
+  last_cmd_vel_time_ = Simulator::Instance()->GetSimTime();
 }
