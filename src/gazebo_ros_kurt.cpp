@@ -29,6 +29,9 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
 
   Param::Begin(&this->parameters);
   robotNamespaceP_ = new ParamT<std::string> ("robotNamespace", "/", 0);   // this MUST be called 'robotNamespace' for proper remapping to work
+  cmd_vel_topic_nameP_ = new ParamT<std::string>("cmd_vel_topic_name", "", 1);
+  odom_topic_nameP_ = new ParamT<std::string>("odom_topic_name", "", 1);
+  joint_states_topic_nameP_ = new ParamT<std::string>("joint_states_topic_name", "", 1);
   joint_nameP_.push_back(new ParamT<std::string> ("left_front_wheel_joint", "left_front_wheel_joint", 1));
   joint_nameP_.push_back(new ParamT<std::string> ("left_middle_wheel_joint", "left_middle_wheel_joint", 1));
   joint_nameP_.push_back(new ParamT<std::string> ("left_rear_wheel_joint", "left_rear_wheel_joint", 1));
@@ -57,6 +60,9 @@ GazeboRosKurt::~GazeboRosKurt()
   delete turning_adaptationP_;
   delete torqueP_;
   delete robotNamespaceP_;
+  delete cmd_vel_topic_nameP_;
+  delete odom_topic_nameP_;
+  delete joint_states_topic_nameP_;
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
@@ -78,6 +84,12 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
 
   rosnode_ = new ros::NodeHandle(**robotNamespaceP_);
 
+  cmd_vel_topic_nameP_->Load(node);
+  cmd_vel_topic_name_ = cmd_vel_topic_nameP_->GetValue();
+  odom_topic_nameP_->Load(node);
+  odom_topic_name_ = odom_topic_nameP_->GetValue();
+  joint_states_topic_nameP_->Load(node);
+  joint_states_topic_name_ = joint_states_topic_nameP_->GetValue();
   wheel_sepP_->Load(node);
   wheel_diamP_->Load(node);
   turning_adaptationP_->Load(node);
@@ -90,11 +102,9 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
       gzthrow("The controller couldn't get joint " << **joint_nameP_[i]);
   }
 
-  cmd_vel_sub_ = rosnode_->subscribe("cmd_vel", 1, &GazeboRosKurt::OnCmdVel, this);
-
-  odom_pub_ = rosnode_->advertise<nav_msgs::Odometry> ("/odom", 1);
-
-  joint_state_pub_ = rosnode_->advertise<sensor_msgs::JointState> ("/joint_states", 1);
+  cmd_vel_sub_ = rosnode_->subscribe(cmd_vel_topic_name_, 1, &GazeboRosKurt::OnCmdVel, this);
+  odom_pub_ = rosnode_->advertise<nav_msgs::Odometry> (odom_topic_name_, 1);
+  joint_state_pub_ = rosnode_->advertise<sensor_msgs::JointState> (joint_states_topic_name_, 1);
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {

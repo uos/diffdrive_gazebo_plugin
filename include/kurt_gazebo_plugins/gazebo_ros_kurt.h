@@ -40,6 +40,13 @@ private:
 
   ParamT<std::string> *robotNamespaceP_;
 
+  ParamT<std::string> *cmd_vel_topic_nameP_;
+  std::string cmd_vel_topic_name_;
+  ParamT<std::string> *odom_topic_nameP_;
+  std::string odom_topic_name_;
+  ParamT<std::string> *joint_states_topic_nameP_;
+  std::string joint_states_topic_name_;
+
   std::vector<ParamT<std::string> *> joint_nameP_;
 
   /// Separation between the wheels
