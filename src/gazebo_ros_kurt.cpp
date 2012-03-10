@@ -22,9 +22,6 @@ enum
 GazeboRosKurt::GazeboRosKurt(Entity *parent) :
   Controller(parent)
 {
-  ros::MultiThreadedSpinner s(1);
-  boost::thread spinner_thread(boost::bind(&ros::spin, s));
-
   my_parent_ = dynamic_cast<Model*> (parent);
 
   if (!my_parent_)
