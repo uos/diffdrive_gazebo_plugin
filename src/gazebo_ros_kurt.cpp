@@ -28,7 +28,7 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
     gzthrow("Gazebo_ROS_Kurt controller requires a Model as its parent");
 
   Param::Begin(&this->parameters);
-  node_namespaceP_ = new ParamT<std::string> ("node_namespace", "", 0);
+  robotNamespaceP_ = new ParamT<std::string> ("robotNamespace", "/", 0);   // this MUST be called 'robotNamespace' for proper remapping to work
   joint_nameP_.push_back(new ParamT<std::string> ("left_front_wheel_joint", "left_front_wheel_joint", 1));
   joint_nameP_.push_back(new ParamT<std::string> ("left_middle_wheel_joint", "left_middle_wheel_joint", 1));
   joint_nameP_.push_back(new ParamT<std::string> ("left_rear_wheel_joint", "left_rear_wheel_joint", 1));
@@ -56,7 +56,7 @@ GazeboRosKurt::~GazeboRosKurt()
   delete wheel_sepP_;
   delete turning_adaptationP_;
   delete torqueP_;
-  delete node_namespaceP_;
+  delete robotNamespaceP_;
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
@@ -68,7 +68,16 @@ GazeboRosKurt::~GazeboRosKurt()
 
 void GazeboRosKurt::LoadChild(XMLConfigNode *node)
 {
-  node_namespaceP_->Load(node);
+  robotNamespaceP_->Load(node);
+  if (!ros::isInitialized())
+  {
+    int argc = 0;
+    char** argv = NULL;
+    ros::init(argc, argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+  }
+
+  rosnode_ = new ros::NodeHandle(**robotNamespaceP_);
+
   wheel_sepP_->Load(node);
   wheel_diamP_->Load(node);
   turning_adaptationP_->Load(node);
@@ -80,15 +89,6 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
     if (!joints_[i])
       gzthrow("The controller couldn't get joint " << **joint_nameP_[i]);
   }
-
-  if (!ros::isInitialized())
-  {
-    int argc = 0;
-    char** argv = NULL;
-    ros::init(argc, argv, "gazebo_ros_kurt", ros::init_options::NoSigintHandler | ros::init_options::AnonymousName);
-  }
-
-  rosnode_ = new ros::NodeHandle(**node_namespaceP_);
 
   cmd_vel_sub_ = rosnode_->subscribe("cmd_vel", 1, &GazeboRosKurt::OnCmdVel, this);
 

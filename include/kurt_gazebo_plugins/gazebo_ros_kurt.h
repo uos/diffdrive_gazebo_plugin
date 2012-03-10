@@ -38,7 +38,8 @@ private:
 
   ros::Subscriber cmd_vel_sub_;
 
-  ParamT<std::string> *node_namespaceP_;
+  ParamT<std::string> *robotNamespaceP_;
+
   std::vector<ParamT<std::string> *> joint_nameP_;
 
   /// Separation between the wheels
