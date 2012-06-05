@@ -58,8 +58,11 @@ private:
   /// Turning adaptation for odometry
   ParamT<float> *turning_adaptationP_;
 
-  /// Torque applied to the wheels
+  /// maximum torque applied to the wheels [Nm]
   ParamT<float> *torqueP_;
+
+  /// maximum forward speed of Kurt [m/s]
+  ParamT<float> *max_velocityP_;
 
   Model *my_parent_;
 

@@ -42,6 +42,7 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
   wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
   turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
   torqueP_ = new ParamT<float> ("torque", 4.0, 1);
+  max_velocityP_ = new ParamT<float> ("max_velocity", 1.0, 1);
   Param::End();
 
   wheel_speed_right_ = 0.0;
@@ -59,6 +60,7 @@ GazeboRosKurt::~GazeboRosKurt()
   delete wheel_sepP_;
   delete turning_adaptationP_;
   delete torqueP_;
+  delete max_velocityP_;
   delete robotNamespaceP_;
   delete cmd_vel_topic_nameP_;
   delete odom_topic_nameP_;
@@ -94,6 +96,7 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
   wheel_diamP_->Load(node);
   turning_adaptationP_->Load(node);
   torqueP_->Load(node);
+  max_velocityP_->Load(node);
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
     joint_nameP_[i]->Load(node);
@@ -239,6 +242,12 @@ void GazeboRosKurt::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
 
   wheel_speed_left_ = vr - va * **(wheel_sepP_) / 2;
   wheel_speed_right_ = vr + va * **(wheel_sepP_) / 2;
+
+  // limit wheel speed
+  if (fabs(wheel_speed_left_) > **max_velocityP_)
+    wheel_speed_left_ = copysign(**max_velocityP_, wheel_speed_left_);
+  if (fabs(wheel_speed_right_) > **max_velocityP_)
+    wheel_speed_right_ = copysign(**max_velocityP_, wheel_speed_right_);
 
   last_cmd_vel_time_ = Simulator::Instance()->GetSimTime();
 }
