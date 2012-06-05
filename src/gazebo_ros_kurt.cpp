@@ -41,7 +41,7 @@ GazeboRosKurt::GazeboRosKurt(Entity *parent) :
   wheel_sepP_ = new ParamT<float> ("wheel_separation", 0.34, 1);
   wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
   turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
-  torqueP_ = new ParamT<float> ("torque", 20.0, 1);
+  torqueP_ = new ParamT<float> ("torque", 4.0, 1);
   Param::End();
 
   wheel_speed_right_ = 0.0;
