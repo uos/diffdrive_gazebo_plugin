@@ -212,14 +212,13 @@ void GazeboRosKurt::UpdateChild()
   memcpy(&odom.pose.covariance[0], pose_cov, sizeof(double) * 36);
   memcpy(&odom.twist.covariance[0], pose_cov, sizeof(double) * 36);
 
-  // TODO: why is this all 0? shouldn't this be filled in using odom_vel? (was copied like this from turtlebot)
-  odom.twist.twist.linear.x = 0;
+  odom.twist.twist.linear.x = odom_vel_[0];
   odom.twist.twist.linear.y = 0;
   odom.twist.twist.linear.z = 0;
 
   odom.twist.twist.angular.x = 0;
   odom.twist.twist.angular.y = 0;
-  odom.twist.twist.angular.z = 0;
+  odom.twist.twist.angular.z = odom_vel_[2];
 
   odom_pub_.publish(odom);
 
