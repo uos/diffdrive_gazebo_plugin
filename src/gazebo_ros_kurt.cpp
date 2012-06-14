@@ -2,16 +2,11 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 
-#include <gazebo/Joint.hh>
-#include <gazebo/Simulator.hh>
-#include <gazebo/GazeboError.hh>
-#include <gazebo/ControllerFactory.hh>
-
 #include <ros/time.h>
 
-using namespace gazebo;
+#include <tf/transform_broadcaster.h>
 
-GZ_REGISTER_DYNAMIC_CONTROLLER("gazebo_ros_kurt", GazeboRosKurt)
+using namespace gazebo;
 
 // index of left / right middle wheel joint
 enum
@@ -19,91 +14,122 @@ enum
   LEFT = 1, RIGHT = 4
 };
 
-GazeboRosKurt::GazeboRosKurt(Entity *parent) :
-  Controller(parent)
+GazeboRosKurt::GazeboRosKurt() :
+  wheel_speed_right_(0.0),
+  wheel_speed_left_(0.0)
 {
-  my_parent_ = dynamic_cast<Model*> (parent);
-
-  if (!my_parent_)
-    gzthrow("Gazebo_ROS_Kurt controller requires a Model as its parent");
-
-  Param::Begin(&this->parameters);
-  robotNamespaceP_ = new ParamT<std::string> ("robotNamespace", "/", 0);   // this MUST be called 'robotNamespace' for proper remapping to work
-  cmd_vel_topic_nameP_ = new ParamT<std::string>("cmd_vel_topic_name", "", 1);
-  odom_topic_nameP_ = new ParamT<std::string>("odom_topic_name", "", 1);
-  joint_states_topic_nameP_ = new ParamT<std::string>("joint_states_topic_name", "", 1);
-  joint_nameP_.push_back(new ParamT<std::string> ("left_front_wheel_joint", "left_front_wheel_joint", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("left_middle_wheel_joint", "left_middle_wheel_joint", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("left_rear_wheel_joint", "left_rear_wheel_joint", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_front_wheel_joint", "right_front_wheel_joint", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_middle_wheel_joint", "right_middle_wheel_joint", 1));
-  joint_nameP_.push_back(new ParamT<std::string> ("right_rear_wheel_joint", "right_rear_wheel_joint", 1));
-  wheel_sepP_ = new ParamT<float> ("wheel_separation", 0.34, 1);
-  wheel_diamP_ = new ParamT<float> ("wheel_diameter", 0.15, 1);
-  turning_adaptationP_ = new ParamT<float> ("turning_adaptation", 0.69, 1);
-  torqueP_ = new ParamT<float> ("torque", 4.0, 1);
-  max_velocityP_ = new ParamT<float> ("max_velocity", 1.0, 1);
-  Param::End();
-
-  wheel_speed_right_ = 0.0;
-  wheel_speed_left_ = 0.0;
+  this->spinner_thread_ = new boost::thread( boost::bind( &GazeboRosKurt::spin, this) );
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
-    joints_[i] = NULL;
+    joints_[i].reset();
   }
 }
 
 GazeboRosKurt::~GazeboRosKurt()
 {
-  delete wheel_diamP_;
-  delete wheel_sepP_;
-  delete turning_adaptationP_;
-  delete torqueP_;
-  delete max_velocityP_;
-  delete robotNamespaceP_;
-  delete cmd_vel_topic_nameP_;
-  delete odom_topic_nameP_;
-  delete joint_states_topic_nameP_;
-
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
-  {
-    delete joint_nameP_[i];
-  }
-
+  rosnode_->shutdown();
+  this->spinner_thread_->join();
+  delete this->spinner_thread_;
   delete rosnode_;
 }
 
-void GazeboRosKurt::LoadChild(XMLConfigNode *node)
+void GazeboRosKurt::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 {
-  robotNamespaceP_->Load(node);
+  this->my_world_ = _parent->GetWorld();
+
+  this->my_parent_ = _parent;
+  if (!this->my_parent_)
+  {
+    ROS_FATAL("Gazebo_ROS_Create controller requires a Model as its parent");
+    return;
+  }
+
+
+  // this MUST be called 'robotNamespace' for proper remapping to work
+  // TODO: could be 'node_namespace' now
+  this->node_namespace_ = "/";
+  if (_sdf->HasElement("robotNamespace"))
+    this->node_namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+
+
+  cmd_vel_topic_name_ = "/cmd_vel";
+  if (_sdf->HasElement("cmd_vel_topic_name"))
+    cmd_vel_topic_name_ = _sdf->GetElement("cmd_vel_topic_name")->GetValueString();
+
+  odom_topic_name_ = "/odom";
+  if (_sdf->HasElement("odom_topic_name"))
+    odom_topic_name_ = _sdf->GetElement("odom_topic_name")->GetValueString();
+
+  joint_states_topic_name_ = "/joint_states";
+  if (_sdf->HasElement("joint_states_topic_name"))
+    joint_states_topic_name_ = _sdf->GetElement("joint_states_topic_name")->GetValueString();
+
+  js_.name.resize(NUM_JOINTS);
+  js_.position.resize(NUM_JOINTS);
+  js_.velocity.resize(NUM_JOINTS);
+  js_.effort.resize(NUM_JOINTS);
+
+  for (size_t i = 0; i < NUM_JOINTS; ++i)
+  {
+    js_.position[i] = 0;
+    js_.velocity[i] = 0;
+    js_.effort[i] = 0;
+  }
+
+  js_.name[0] = "left_front_wheel_joint";
+  if (_sdf->HasElement("left_front_wheel_joint"))
+    js_.name[0] = _sdf->GetElement("left_front_wheel_joint")->GetValueString();
+
+  js_.name[1] = "left_middle_wheel_joint";
+  if (_sdf->HasElement("left_middle_wheel_joint"))
+    js_.name[1] = _sdf->GetElement("left_middle_wheel_joint")->GetValueString();
+
+  js_.name[2] = "left_rear_wheel_joint";
+  if (_sdf->HasElement("left_rear_wheel_joint"))
+    js_.name[2] = _sdf->GetElement("left_rear_wheel_joint")->GetValueString();
+
+  js_.name[3] = "right_front_wheel_joint";
+  if (_sdf->HasElement("right_front_wheel_joint"))
+    js_.name[3] = _sdf->GetElement("right_front_wheel_joint")->GetValueString();
+
+  js_.name[4] = "right_middle_wheel_joint";
+  if (_sdf->HasElement("right_middle_wheel_joint"))
+    js_.name[5] = _sdf->GetElement("right_middle_wheel_joint")->GetValueString();
+
+  js_.name[5] = "right_rear_wheel_joint";
+  if (_sdf->HasElement("right_rear_wheel_joint"))
+    js_.name[5] = _sdf->GetElement("right_rear_wheel_joint")->GetValueString();
+
+  wheel_sep_ = 0.34;
+  if (_sdf->HasElement("wheel_separation"))
+    wheel_sep_ = _sdf->GetElement("wheel_separation")->GetValueDouble();
+
+  turning_adaptation_ = 0.15;
+  if (_sdf->HasElement("turning_adaptation"))
+    turning_adaptation_ = _sdf->GetElement("turning_adaptation")->GetValueDouble();
+
+  wheel_diam_ = 0.15;
+  if (_sdf->HasElement("wheel_diameter"))
+    wheel_diam_ = _sdf->GetElement("wheel_diameter")->GetValueDouble();
+
+  torque_ = 4.0;
+  if (_sdf->HasElement("torque"))
+    torque_ = _sdf->GetElement("torque")->GetValueDouble();
+
+  max_velocity_ = 4.0;
+  if (_sdf->HasElement("max_velocity"))
+    max_velocity_ = _sdf->GetElement("max_velocity")->GetValueDouble();
+
+
   if (!ros::isInitialized())
   {
     int argc = 0;
     char** argv = NULL;
-    ros::init(argc, argv, "gazebo", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ros::init(argc, argv, "gazebo_kurt", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
   }
 
-  rosnode_ = new ros::NodeHandle(**robotNamespaceP_);
-
-  cmd_vel_topic_nameP_->Load(node);
-  cmd_vel_topic_name_ = cmd_vel_topic_nameP_->GetValue();
-  odom_topic_nameP_->Load(node);
-  odom_topic_name_ = odom_topic_nameP_->GetValue();
-  joint_states_topic_nameP_->Load(node);
-  joint_states_topic_name_ = joint_states_topic_nameP_->GetValue();
-  wheel_sepP_->Load(node);
-  wheel_diamP_->Load(node);
-  turning_adaptationP_->Load(node);
-  torqueP_->Load(node);
-  max_velocityP_->Load(node);
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
-  {
-    joint_nameP_[i]->Load(node);
-    joints_[i] = my_parent_->GetJoint(**joint_nameP_[i]);
-    if (!joints_[i])
-      gzthrow("The controller couldn't get joint " << **joint_nameP_[i]);
-  }
+  rosnode_ = new ros::NodeHandle(node_namespace_);
 
   cmd_vel_sub_ = rosnode_->subscribe(cmd_vel_topic_name_, 1, &GazeboRosKurt::OnCmdVel, this);
   odom_pub_ = rosnode_->advertise<nav_msgs::Odometry> (odom_topic_name_, 1);
@@ -111,45 +137,61 @@ void GazeboRosKurt::LoadChild(XMLConfigNode *node)
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
-    js_.name.push_back(**joint_nameP_[i]);
-    js_.position.push_back(0);
-    js_.velocity.push_back(0);
-    js_.effort.push_back(0);
+    joints_[i] = my_parent_->GetJoint(js_.name[i]);
+    if (!joints_[i])
+      gzthrow("The controller couldn't get joint " << js_.name[i]);
   }
+
+  //initialize time and odometry position
+  prev_update_time_ = last_cmd_vel_time_ = this->my_world_->GetSimTime();
+  odom_pose_[0] = 0.0;
+  odom_pose_[1] = 0.0;
+  odom_pose_[2] = 0.0;
+
+  // Get then name of the parent model
+  std::string modelName = _sdf->GetParent()->GetValueString("name");
+
+  // Listen to the update event. This event is broadcast every
+  // simulation iteration.
+  this->updateConnection = event::Events::ConnectWorldUpdateStart(
+      boost::bind(&GazeboRosKurt::UpdateChild, this));
+  gzdbg << "plugin model name: " << modelName << "\n";
 
   ROS_INFO("gazebo_ros_kurt plugin initialized");
 }
 
-void GazeboRosKurt::InitChild()
-{
-}
-
-void GazeboRosKurt::FiniChild()
-{
-  rosnode_->shutdown();
-}
-
 void GazeboRosKurt::UpdateChild()
 {
+  common::Time time_now = this->my_world_->GetSimTime();
+  common::Time step_time = time_now - prev_update_time_;
+  prev_update_time_ = time_now;
+
   double wd, ws;
   double d1, d2;
   double dr, da;
   double turning_adaptation;
-  Time step_time;
 
-  wd = **(wheel_diamP_);
-  ws = **(wheel_sepP_);
-  turning_adaptation = **(turning_adaptationP_);
+  wd = wheel_diam_;
+  ws = wheel_sep_;
+  turning_adaptation = turning_adaptation_;
 
   d1 = d2 = 0;
   dr = da = 0;
 
-  step_time = Simulator::Instance()->GetSimTime() - prev_update_time_;
-  prev_update_time_ = Simulator::Instance()->GetSimTime();
-
   // Distance travelled by middle wheels
   d1 = step_time.Double() * (wd / 2) * joints_[LEFT]->GetVelocity(0);
   d2 = step_time.Double() * (wd / 2) * joints_[RIGHT]->GetVelocity(0);
+
+  // Can see NaN values here, just zero them out if needed
+  if (isnan(d1)) {
+    ROS_WARN_THROTTLE(0.1, "Gazebo ROS Kurt plugin. NaN in d1. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[LEFT]->GetVelocity(0));
+    d1 = 0;
+  }
+
+  if (isnan(d2)) {
+    ROS_WARN_THROTTLE(0.1, "Gazebo ROS Kurt plugin. NaN in d2. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[RIGHT]->GetVelocity(0));
+    d2 = 0;
+  }
 
   dr = (d1 + d2) / 2;
   da = (d2 - d1) / ws * turning_adaptation;
@@ -164,9 +206,9 @@ void GazeboRosKurt::UpdateChild()
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
 
-  if (Simulator::Instance()->GetSimTime() > last_cmd_vel_time_ + Time(CMD_VEL_TIMEOUT))
+  if (this->my_world_->GetSimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
   {
-	ROS_DEBUG("gazebo_ros_kurt: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", Simulator::Instance()->GetSimTime().Double(), last_cmd_vel_time_.Double(), Time(CMD_VEL_TIMEOUT).Double());
+	ROS_DEBUG("gazebo_ros_kurt: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
 	wheel_speed_left_ = wheel_speed_right_ = 0.0;
   }
 
@@ -176,18 +218,19 @@ void GazeboRosKurt::UpdateChild()
   for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_left_ / (wd / 2.0));
-    joints_[i]->SetMaxForce(0, **(torqueP_));
+    joints_[i]->SetMaxForce(0, torque_);
   }
 
   // turn right wheels
   for (unsigned short i = NUM_JOINTS/2; i < NUM_JOINTS; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_right_ / (wd / 2.0));
-    joints_[i]->SetMaxForce(0, **(torqueP_));
+    joints_[i]->SetMaxForce(0, torque_);
   }
 
   nav_msgs::Odometry odom;
-  odom.header.stamp = ros::Time::now();
+  odom.header.stamp.sec = time_now.sec;
+  odom.header.stamp.nsec = time_now.nsec;
   odom.header.frame_id = "odom_combined";
   odom.child_frame_id = "base_footprint";
   odom.pose.pose.position.x = odom_pose_[0];
@@ -195,7 +238,7 @@ void GazeboRosKurt::UpdateChild()
   odom.pose.pose.position.z = 0;
 
   btQuaternion qt;
-  qt.setRPY(0, 0, odom_pose_[2]);
+  qt.setEuler(0, 0, odom_pose_[2]);
 
   odom.pose.pose.orientation.x = qt.getX();
   odom.pose.pose.orientation.y = qt.getY();
@@ -222,7 +265,8 @@ void GazeboRosKurt::UpdateChild()
 
   odom_pub_.publish(odom);
 
-  js_.header.stamp = ros::Time::now();
+  js_.header.stamp.sec = time_now.sec;
+  js_.header.stamp.nsec = time_now.nsec;
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
@@ -235,18 +279,24 @@ void GazeboRosKurt::UpdateChild()
 
 void GazeboRosKurt::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
 {
+  last_cmd_vel_time_ = this->my_world_->GetSimTime();
   double vr, va;
   vr = msg->linear.x;
   va = msg->angular.z;
 
-  wheel_speed_left_ = vr - va * **(wheel_sepP_) / 2;
-  wheel_speed_right_ = vr + va * **(wheel_sepP_) / 2;
+  wheel_speed_left_ = vr - va * wheel_sep_ / 2;
+  wheel_speed_right_ = vr + va * wheel_sep_ / 2;
 
   // limit wheel speed
-  if (fabs(wheel_speed_left_) > **max_velocityP_)
-    wheel_speed_left_ = copysign(**max_velocityP_, wheel_speed_left_);
-  if (fabs(wheel_speed_right_) > **max_velocityP_)
-    wheel_speed_right_ = copysign(**max_velocityP_, wheel_speed_right_);
-
-  last_cmd_vel_time_ = Simulator::Instance()->GetSimTime();
+  if (fabs(wheel_speed_left_) > max_velocity_)
+    wheel_speed_left_ = copysign(max_velocity_, wheel_speed_left_);
+  if (fabs(wheel_speed_right_) > max_velocity_)
+    wheel_speed_right_ = copysign(max_velocity_, wheel_speed_right_);
 }
+
+void GazeboRosKurt::spin()
+{
+  while(ros::ok()) ros::spinOnce();
+}
+
+GZ_REGISTER_MODEL_PLUGIN(GazeboRosKurt);

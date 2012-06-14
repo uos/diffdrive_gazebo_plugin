@@ -2,27 +2,25 @@
 #define GAZEBO_ROS_KURT_H
 
 #include <ros/ros.h>
-#include <gazebo/Controller.hh>
-#include <gazebo/Model.hh>
+#include <common/Plugin.hh>
+#include <common/Time.hh>
+#include <common/Events.hh>
+#include <physics/physics.h>
 
-#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/TwistWithCovariance.h>
-#include <geometry_msgs/PoseWithCovariance.h>
 #include <sensor_msgs/JointState.h>
 
-#include <tf/transform_broadcaster.h>
+#include <boost/thread.hpp>
 
 namespace gazebo
 {
-class GazeboRosKurt : public Controller
+class GazeboRosKurt : public ModelPlugin
 {
 public:
-  GazeboRosKurt(gazebo::Entity *parent);
+  GazeboRosKurt();
   virtual ~GazeboRosKurt();
 
-  virtual void LoadChild(XMLConfigNode *node);
-  virtual void InitChild();
-  virtual void FiniChild();
+  virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
   virtual void UpdateChild();
 
 private:
@@ -38,51 +36,53 @@ private:
 
   ros::Subscriber cmd_vel_sub_;
 
-  ParamT<std::string> *robotNamespaceP_;
+  std::string node_namespace_;
 
-  ParamT<std::string> *cmd_vel_topic_nameP_;
   std::string cmd_vel_topic_name_;
-  ParamT<std::string> *odom_topic_nameP_;
   std::string odom_topic_name_;
-  ParamT<std::string> *joint_states_topic_nameP_;
   std::string joint_states_topic_name_;
 
-  std::vector<ParamT<std::string> *> joint_nameP_;
-
   /// Separation between the wheels
-  ParamT<float> *wheel_sepP_;
+  float wheel_sep_;
 
   /// Diameter of the wheels
-  ParamT<float> *wheel_diamP_;
+  float wheel_diam_;
 
   /// Turning adaptation for odometry
-  ParamT<float> *turning_adaptationP_;
+  float turning_adaptation_;
 
   /// maximum torque applied to the wheels [Nm]
-  ParamT<float> *torqueP_;
+  float torque_;
 
   /// maximum forward speed of Kurt [m/s]
-  ParamT<float> *max_velocityP_;
+  float max_velocity_;
 
-  Model *my_parent_;
+  physics::WorldPtr my_world_;
+  physics::ModelPtr my_parent_;
 
   /// Desired speeds of the wheels
   float wheel_speed_right_;
   float wheel_speed_left_;
 
-  Joint *joints_[NUM_JOINTS];
+  physics::JointPtr joints_[NUM_JOINTS];
 
   // Simulation time of the last update
-  Time prev_update_time_;
+  common::Time prev_update_time_;
 
   // Simulation time when the last cmd_vel command was received (for timeout)
-  Time last_cmd_vel_time_;
+  common::Time last_cmd_vel_time_;
+
+  // Pointer to the update event connection
+  event::ConnectionPtr updateConnection;
 
   float odom_pose_[3];
   float odom_vel_[3];
 
-  tf::TransformBroadcaster transform_broadcaster_;
   sensor_msgs::JointState js_;
+
+  void spin();
+  boost::thread *spinner_thread_;
+
 };
 }
 #endif
