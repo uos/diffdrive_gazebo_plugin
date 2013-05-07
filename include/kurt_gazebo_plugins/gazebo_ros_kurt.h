@@ -5,7 +5,7 @@
 #include <common/Plugin.hh>
 #include <common/Time.hh>
 #include <common/Events.hh>
-#include <physics/physics.h>
+#include <physics/physics.hh>
 
 #include <geometry_msgs/TwistWithCovariance.h>
 #include <sensor_msgs/JointState.h>
