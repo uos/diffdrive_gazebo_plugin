@@ -270,7 +270,7 @@ void GazeboRosDiffdrive::UpdateChild()
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
-    js_.position[i] = joints_[i]->GetAngle(0).GetAsRadian();
+    js_.position[i] = joints_[i]->GetAngle(0).Radian();
     js_.velocity[i] = joints_[i]->GetVelocity(0);
   }
 
