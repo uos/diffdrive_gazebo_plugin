@@ -1,5 +1,5 @@
-#ifndef GAZEBO_ROS_KURT_H
-#define GAZEBO_ROS_KURT_H
+#ifndef GAZEBO_ROS_DIFFDRIVE_UOS
+#define GAZEBO_ROS_DIFFDRIVE_UOS
 
 #include <ros/ros.h>
 #include <common/Plugin.hh>
@@ -14,11 +14,11 @@
 
 namespace gazebo
 {
-class GazeboRosKurt : public ModelPlugin
+class GazeboRosDiffdrive : public ModelPlugin
 {
 public:
-  GazeboRosKurt();
-  virtual ~GazeboRosKurt();
+  GazeboRosDiffdrive();
+  virtual ~GazeboRosDiffdrive();
 
   virtual void Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf);
   virtual void UpdateChild();
@@ -54,7 +54,7 @@ private:
   /// maximum torque applied to the wheels [Nm]
   float torque_;
 
-  /// maximum forward speed of Kurt [m/s]
+  /// maximum linear speed of the robot [m/s]
   float max_velocity_;
 
   physics::WorldPtr my_world_;

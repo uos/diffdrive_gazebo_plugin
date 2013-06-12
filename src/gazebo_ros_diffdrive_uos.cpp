@@ -1,4 +1,4 @@
-#include <kurt_gazebo_plugins/gazebo_ros_kurt.h>
+#include <diffdrive_gazebo_plugin/gazebo_ros_diffdrive_uos.h>
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 
@@ -14,11 +14,11 @@ enum
   LEFT = 1, RIGHT = 4
 };
 
-GazeboRosKurt::GazeboRosKurt() :
+GazeboRosDiffdrive::GazeboRosDiffdrive() :
   wheel_speed_right_(0.0),
   wheel_speed_left_(0.0)
 {
-  this->spinner_thread_ = new boost::thread( boost::bind( &GazeboRosKurt::spin, this) );
+  this->spinner_thread_ = new boost::thread( boost::bind( &GazeboRosDiffdrive::spin, this) );
 
   for (size_t i = 0; i < NUM_JOINTS; ++i)
   {
@@ -26,7 +26,7 @@ GazeboRosKurt::GazeboRosKurt() :
   }
 }
 
-GazeboRosKurt::~GazeboRosKurt()
+GazeboRosDiffdrive::~GazeboRosDiffdrive()
 {
   rosnode_->shutdown();
   this->spinner_thread_->join();
@@ -34,7 +34,7 @@ GazeboRosKurt::~GazeboRosKurt()
   delete rosnode_;
 }
 
-void GazeboRosKurt::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
+void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 {
   this->my_world_ = _parent->GetWorld();
 
@@ -126,12 +126,12 @@ void GazeboRosKurt::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   {
     int argc = 0;
     char** argv = NULL;
-    ros::init(argc, argv, "gazebo_kurt", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
+    ros::init(argc, argv, "gazebo_ros_diffdrive_uos", ros::init_options::NoSigintHandler|ros::init_options::AnonymousName);
   }
 
   rosnode_ = new ros::NodeHandle(node_namespace_);
 
-  cmd_vel_sub_ = rosnode_->subscribe(cmd_vel_topic_name_, 1, &GazeboRosKurt::OnCmdVel, this);
+  cmd_vel_sub_ = rosnode_->subscribe(cmd_vel_topic_name_, 1, &GazeboRosDiffdrive::OnCmdVel, this);
   odom_pub_ = rosnode_->advertise<nav_msgs::Odometry> (odom_topic_name_, 1);
   joint_state_pub_ = rosnode_->advertise<sensor_msgs::JointState> (joint_states_topic_name_, 1);
 
@@ -154,13 +154,13 @@ void GazeboRosKurt::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
   this->updateConnection = event::Events::ConnectWorldUpdateStart(
-      boost::bind(&GazeboRosKurt::UpdateChild, this));
+      boost::bind(&GazeboRosDiffdrive::UpdateChild, this));
   gzdbg << "plugin model name: " << modelName << "\n";
 
-  ROS_INFO("gazebo_ros_kurt plugin initialized");
+  ROS_INFO("gazebo_ros_diffdrive_uos plugin initialized");
 }
 
-void GazeboRosKurt::UpdateChild()
+void GazeboRosDiffdrive::UpdateChild()
 {
   common::Time time_now = this->my_world_->GetSimTime();
   common::Time step_time = time_now - prev_update_time_;
@@ -184,12 +184,12 @@ void GazeboRosKurt::UpdateChild()
 
   // Can see NaN values here, just zero them out if needed
   if (isnan(d1)) {
-    ROS_WARN_THROTTLE(0.1, "Gazebo ROS Kurt plugin. NaN in d1. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[LEFT]->GetVelocity(0));
+    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d1. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[LEFT]->GetVelocity(0));
     d1 = 0;
   }
 
   if (isnan(d2)) {
-    ROS_WARN_THROTTLE(0.1, "Gazebo ROS Kurt plugin. NaN in d2. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[RIGHT]->GetVelocity(0));
+    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d2. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[RIGHT]->GetVelocity(0));
     d2 = 0;
   }
 
@@ -208,11 +208,11 @@ void GazeboRosKurt::UpdateChild()
 
   if (this->my_world_->GetSimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
   {
-	ROS_DEBUG("gazebo_ros_kurt: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
+	ROS_DEBUG("gazebo_ros_diffdrive_uos: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
 	wheel_speed_left_ = wheel_speed_right_ = 0.0;
   }
 
-  ROS_DEBUG("gazebo_ros_kurt: setting wheel speeds (left; %f, right: %f)", wheel_speed_left_ / (wd / 2.0), wheel_speed_right_ / (wd / 2.0));
+  ROS_DEBUG("gazebo_ros_diffdrive_uos: setting wheel speeds (left; %f, right: %f)", wheel_speed_left_ / (wd / 2.0), wheel_speed_right_ / (wd / 2.0));
 
   // turn left wheels
   for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
@@ -277,7 +277,7 @@ void GazeboRosKurt::UpdateChild()
   joint_state_pub_.publish(js_);
 }
 
-void GazeboRosKurt::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
+void GazeboRosDiffdrive::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
 {
   last_cmd_vel_time_ = this->my_world_->GetSimTime();
   double vr, va;
@@ -294,9 +294,9 @@ void GazeboRosKurt::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
     wheel_speed_right_ = copysign(max_velocity_, wheel_speed_right_);
 }
 
-void GazeboRosKurt::spin()
+void GazeboRosDiffdrive::spin()
 {
   while(ros::ok()) ros::spinOnce();
 }
 
-GZ_REGISTER_MODEL_PLUGIN(GazeboRosKurt);
+GZ_REGISTER_MODEL_PLUGIN(GazeboRosDiffdrive);

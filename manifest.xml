@@ -1,13 +1,13 @@
 <package>
-  <description brief="Gazebo plugins for the KURT robot">
+  <description brief="Gazebo plugin for differential drive (skid steer) robots">
 
-    This package provides Gazebo plugins for the KURT robot. It is based on turtlebot_gazebo_plugins by Nate Koenig.
+    This package provides Gazebo plugins for differential drive robots. It is based on turtlebot_gazebo_plugins by Nate Koenig.
 
   </description>
   <author>Martin Günther</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/kurt_gazebo_plugins</url>
+  <url>http://ros.org/wiki/diffdrive_gazebo_plugin</url>
   <depend package="gazebo"/>
   <depend package="nav_msgs"/>
   <depend package="geometry_msgs"/>

@@ -18,7 +18,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 add_definitions(-fPIC)
-rosbuild_add_library(gazebo_ros_kurt src/gazebo_ros_kurt.cpp)
+rosbuild_add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
