@@ -2,10 +2,10 @@
 #define GAZEBO_ROS_DIFFDRIVE_UOS
 
 #include <ros/ros.h>
-#include <common/Plugin.hh>
-#include <common/Time.hh>
-#include <common/Events.hh>
-#include <physics/physics.hh>
+#include <gazebo/common/Plugin.hh>
+#include <gazebo/common/Time.hh>
+#include <gazebo/common/Events.hh>
+#include <gazebo/physics/physics.hh>
 
 #include <geometry_msgs/TwistWithCovariance.h>
 #include <sensor_msgs/JointState.h>
