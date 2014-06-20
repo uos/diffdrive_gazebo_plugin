@@ -1,0 +1,33 @@
+<package>
+  <name>diffdrive_gazebo_plugin</name>
+  <version>0.0.2</version>
+  <description>This package provides Gazebo plugins for differential drive robots. It is based on turtlebot_gazebo_plugins by Nate Koenig.</description>
+  <maintainer email="mguenthe@uni-osnabrueck.de">Martin Guenther</maintainer>
+
+  <license>BSD</license>
+
+  <url type="website">http://ros.org/wiki/diffdrive_gazebo_plugin</url>
+
+  <author>Martin Guenther</author>
+
+  <!-- Dependencies which this package needs to build itself. -->
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <!-- Dependencies needed to compile this package. -->
+  <build_depend>gazebo_ros</build_depend>
+  <build_depend>nav_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+
+  <!-- Dependencies needed after this package is compiled. -->
+  <run_depend>gazebo_ros</run_depend>
+  <run_depend>nav_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+
+<export>
+    <cpp lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib" cflags="-I${prefix}/include"/>
+    <gazebo_ros plugin_path="${prefix}/lib"/>
+</export>
+
+</package>
