@@ -14,12 +14,11 @@ find_package(catkin REQUIRED COMPONENTS gazebo_ros nav_msgs geometry_msgs sensor
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
-find_package(gazebo REQUIRED)
-
 include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
 catkin_package(
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
+    INCLUDE_DIRS include
 )
 
 add_definitions(-fPIC)
