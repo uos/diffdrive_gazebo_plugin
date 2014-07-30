@@ -24,7 +24,9 @@ public:
   virtual void UpdateChild();
 
 private:
-  static const size_t NUM_JOINTS = 6;
+  size_t num_joints_;
+  size_t left_wheel_index_:
+  size_t right_wheel_index_;
   static const double CMD_VEL_TIMEOUT = 0.6;
 
   void OnCmdVel(const geometry_msgs::TwistConstPtr &msg);
@@ -64,7 +66,7 @@ private:
   float wheel_speed_right_;
   float wheel_speed_left_;
 
-  physics::JointPtr joints_[NUM_JOINTS];
+  std::vector<physics::JointPtr> joints_;
 
   // Simulation time of the last update
   common::Time prev_update_time_;
