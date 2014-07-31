@@ -37,18 +37,18 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
       // check if volksbot is 6-wheeled or 4-wheeled 
       if (_sdf->HasElement("left_middle_wheel_joint") && _sdf->HasElement("right_middle_wheel_joint"))
       {
-          num_joints = 6;
+          num_joints_ = 6;
           // index of left / right middle wheel joint
           left_wheel_index_ = 1;
           right_wheel_index_ = 4;
       }
       else
       {
-          num_joints = 4;
+          num_joints_ = 4;
           left_wheel_index_ = 0;
           right_wheel_index_ = 2;
       }
-      joints_.resize(num_joints);  
+      joints_.resize(num_joints_);  
       for (size_t i = 0; i < num_joints_; ++i)
       {
           joints_[i].reset();

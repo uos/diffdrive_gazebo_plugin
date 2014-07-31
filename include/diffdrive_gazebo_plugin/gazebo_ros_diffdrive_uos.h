@@ -25,7 +25,7 @@ public:
 
 private:
   size_t num_joints_;
-  size_t left_wheel_index_:
+  size_t left_wheel_index_;
   size_t right_wheel_index_;
   static const double CMD_VEL_TIMEOUT = 0.6;
 
