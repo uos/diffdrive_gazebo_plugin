@@ -6,20 +6,13 @@ project(diffdrive_gazebo_plugin)
 
 find_package(catkin REQUIRED COMPONENTS gazebo_ros nav_msgs geometry_msgs sensor_msgs)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
 find_package(gazebo REQUIRED)
 
-include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
+include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include/)
 
 catkin_package(
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
+    INCLUDE_DIRS include
 )
 
 add_definitions(-fPIC)

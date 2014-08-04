@@ -8,19 +8,15 @@
 
 using namespace gazebo;
 
-// index of left / right middle wheel joint
-enum
-{
-  LEFT = 1, RIGHT = 4
-};
-
 GazeboRosDiffdrive::GazeboRosDiffdrive() :
   wheel_speed_right_(0.0),
   wheel_speed_left_(0.0)
 {
   this->spinner_thread_ = new boost::thread( boost::bind( &GazeboRosDiffdrive::spin, this) );
+  
+  joints_.resize(0);
 
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
+  for (size_t i = 0; i < num_joints_; ++i)
   {
     joints_[i].reset();
   }
@@ -36,6 +32,29 @@ GazeboRosDiffdrive::~GazeboRosDiffdrive()
 
 void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 {
+  if(joints_.size() == 0)
+  {     
+      // check if volksbot is 6-wheeled or 4-wheeled 
+      if (_sdf->HasElement("left_middle_wheel_joint") && _sdf->HasElement("right_middle_wheel_joint"))
+      {
+          num_joints_ = 6;
+          // index of left / right middle wheel joint
+          left_wheel_index_ = 1;
+          right_wheel_index_ = 4;
+      }
+      else
+      {
+          num_joints_ = 4;
+          left_wheel_index_ = 0;
+          right_wheel_index_ = 2;
+      }
+      joints_.resize(num_joints_);  
+      for (size_t i = 0; i < num_joints_; ++i)
+      {
+          joints_[i].reset();
+      }
+  }
+
   this->my_world_ = _parent->GetWorld();
 
   this->my_parent_ = _parent;
@@ -65,42 +84,59 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   if (_sdf->HasElement("joint_states_topic_name"))
     joint_states_topic_name_ = _sdf->GetElement("joint_states_topic_name")->GetValueString();
 
-  js_.name.resize(NUM_JOINTS);
-  js_.position.resize(NUM_JOINTS);
-  js_.velocity.resize(NUM_JOINTS);
-  js_.effort.resize(NUM_JOINTS);
+  js_.name.resize(num_joints_);
+  js_.position.resize(num_joints_);
+  js_.velocity.resize(num_joints_);
+  js_.effort.resize(num_joints_);
 
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
+  for (size_t i = 0; i < num_joints_; ++i)
   {
     js_.position[i] = 0;
     js_.velocity[i] = 0;
     js_.effort[i] = 0;
   }
-
+  
   js_.name[0] = "left_front_wheel_joint";
   if (_sdf->HasElement("left_front_wheel_joint"))
     js_.name[0] = _sdf->GetElement("left_front_wheel_joint")->GetValueString();
 
-  js_.name[1] = "left_middle_wheel_joint";
-  if (_sdf->HasElement("left_middle_wheel_joint"))
-    js_.name[1] = _sdf->GetElement("left_middle_wheel_joint")->GetValueString();
+  if(num_joints_ == 6)
+  {
+      js_.name[1] = "left_middle_wheel_joint";
+      if (_sdf->HasElement("left_middle_wheel_joint"))
+        js_.name[1] = _sdf->GetElement("left_middle_wheel_joint")->GetValueString();
 
-  js_.name[2] = "left_rear_wheel_joint";
-  if (_sdf->HasElement("left_rear_wheel_joint"))
-    js_.name[2] = _sdf->GetElement("left_rear_wheel_joint")->GetValueString();
+      js_.name[2] = "left_rear_wheel_joint";
+      if (_sdf->HasElement("left_rear_wheel_joint"))
+        js_.name[2] = _sdf->GetElement("left_rear_wheel_joint")->GetValueString();
 
-  js_.name[3] = "right_front_wheel_joint";
-  if (_sdf->HasElement("right_front_wheel_joint"))
-    js_.name[3] = _sdf->GetElement("right_front_wheel_joint")->GetValueString();
+      js_.name[3] = "right_front_wheel_joint";
+      if (_sdf->HasElement("right_front_wheel_joint"))
+        js_.name[3] = _sdf->GetElement("right_front_wheel_joint")->GetValueString();
 
-  js_.name[4] = "right_middle_wheel_joint";
-  if (_sdf->HasElement("right_middle_wheel_joint"))
-    js_.name[5] = _sdf->GetElement("right_middle_wheel_joint")->GetValueString();
+      js_.name[4] = "right_middle_wheel_joint";
+      if (_sdf->HasElement("right_middle_wheel_joint"))
+        js_.name[4] = _sdf->GetElement("right_middle_wheel_joint")->GetValueString();
 
-  js_.name[5] = "right_rear_wheel_joint";
-  if (_sdf->HasElement("right_rear_wheel_joint"))
-    js_.name[5] = _sdf->GetElement("right_rear_wheel_joint")->GetValueString();
+      js_.name[5] = "right_rear_wheel_joint";
+      if (_sdf->HasElement("right_rear_wheel_joint"))
+        js_.name[5] = _sdf->GetElement("right_rear_wheel_joint")->GetValueString();
+  }
+  else
+  {
+      js_.name[1] = "left_rear_wheel_joint";
+      if (_sdf->HasElement("left_rear_wheel_joint"))
+        js_.name[1] = _sdf->GetElement("left_rear_wheel_joint")->GetValueString();
 
+      js_.name[2] = "right_front_wheel_joint";
+      if (_sdf->HasElement("right_front_wheel_joint"))
+        js_.name[2] = _sdf->GetElement("right_front_wheel_joint")->GetValueString();
+
+      js_.name[3] = "right_rear_wheel_joint";
+      if (_sdf->HasElement("right_rear_wheel_joint"))
+        js_.name[3] = _sdf->GetElement("right_rear_wheel_joint")->GetValueString();
+  }
+  
   wheel_sep_ = 0.34;
   if (_sdf->HasElement("wheel_separation"))
     wheel_sep_ = _sdf->GetElement("wheel_separation")->GetValueDouble();
@@ -135,7 +171,7 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   odom_pub_ = rosnode_->advertise<nav_msgs::Odometry> (odom_topic_name_, 1);
   joint_state_pub_ = rosnode_->advertise<sensor_msgs::JointState> (joint_states_topic_name_, 1);
 
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
+  for (size_t i = 0; i < num_joints_; ++i)
   {
     joints_[i] = my_parent_->GetJoint(js_.name[i]);
     if (!joints_[i])
@@ -179,17 +215,17 @@ void GazeboRosDiffdrive::UpdateChild()
   dr = da = 0;
 
   // Distance travelled by middle wheels
-  d1 = step_time.Double() * (wd / 2) * joints_[LEFT]->GetVelocity(0);
-  d2 = step_time.Double() * (wd / 2) * joints_[RIGHT]->GetVelocity(0);
+  d1 = step_time.Double() * (wd / 2) * joints_[left_wheel_index_]->GetVelocity(0);
+  d2 = step_time.Double() * (wd / 2) * joints_[right_wheel_index_]->GetVelocity(0);
 
   // Can see NaN values here, just zero them out if needed
   if (isnan(d1)) {
-    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d1. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[LEFT]->GetVelocity(0));
+    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d1. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[left_wheel_index_]->GetVelocity(0));
     d1 = 0;
   }
 
   if (isnan(d2)) {
-    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d2. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[RIGHT]->GetVelocity(0));
+    ROS_WARN_THROTTLE(0.1, "gazebo_ros_diffdrive_uos: NaN in d2. Step time: %.2f. WD: %.2f. Velocity: %.2f", step_time.Double(), wd, joints_[right_wheel_index_]->GetVelocity(0));
     d2 = 0;
   }
 
@@ -208,21 +244,21 @@ void GazeboRosDiffdrive::UpdateChild()
 
   if (this->my_world_->GetSimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
   {
-	ROS_DEBUG("gazebo_ros_diffdrive_uos: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
-	wheel_speed_left_ = wheel_speed_right_ = 0.0;
+    ROS_DEBUG("gazebo_ros_diffdrive_uos: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
+    wheel_speed_left_ = wheel_speed_right_ = 0.0;
   }
 
   ROS_DEBUG("gazebo_ros_diffdrive_uos: setting wheel speeds (left; %f, right: %f)", wheel_speed_left_ / (wd / 2.0), wheel_speed_right_ / (wd / 2.0));
 
   // turn left wheels
-  for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
+  for (unsigned short i = 0; i < num_joints_/2; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_left_ / (wd / 2.0));
     joints_[i]->SetMaxForce(0, torque_);
   }
 
   // turn right wheels
-  for (unsigned short i = NUM_JOINTS/2; i < NUM_JOINTS; i++)
+  for (unsigned short i = num_joints_/2; i < num_joints_; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_right_ / (wd / 2.0));
     joints_[i]->SetMaxForce(0, torque_);
@@ -268,7 +304,7 @@ void GazeboRosDiffdrive::UpdateChild()
   js_.header.stamp.sec = time_now.sec;
   js_.header.stamp.nsec = time_now.nsec;
 
-  for (size_t i = 0; i < NUM_JOINTS; ++i)
+  for (size_t i = 0; i < num_joints_; ++i)
   {
     js_.position[i] = joints_[i]->GetAngle(0).Radian();
     js_.velocity[i] = joints_[i]->GetVelocity(0);
