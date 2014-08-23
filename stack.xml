@@ -7,6 +7,6 @@
   <author>Martin Günther</author>
   <license>BSD</license>  
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/sick_tim3xx</url>
+  <url>http://wiki.ros.org/diffdrive_gazebo_plugin</url>
   <depend stack="ros" />
 </stack>
