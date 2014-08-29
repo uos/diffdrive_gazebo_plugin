@@ -20,6 +20,7 @@ include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
 catkin_package(
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
+    LIBRARIES gazebo_ros_diffdrive_uos
     INCLUDE_DIRS include
 )
 
