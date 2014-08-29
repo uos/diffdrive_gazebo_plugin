@@ -23,6 +23,5 @@ catkin_package(
     INCLUDE_DIRS include
 )
 
-add_definitions(-fPIC)
 add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
 
