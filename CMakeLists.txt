@@ -24,4 +24,5 @@ catkin_package(
 )
 
 add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
+add_dependencies(gazebo_ros_diffdrive_uos ${catkin_EXPORTED_TARGETS})
 
