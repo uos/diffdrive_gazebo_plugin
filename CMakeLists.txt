@@ -20,8 +20,13 @@ include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
 catkin_package(
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
+    LIBRARIES gazebo_ros_diffdrive_uos
+    INCLUDE_DIRS include
 )
 
-add_definitions(-fPIC)
 add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
+add_dependencies(gazebo_ros_diffdrive_uos ${catkin_EXPORTED_TARGETS})
 
+install(TARGETS gazebo_ros_diffdrive_uos LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+
+install(DIRECTORY include/${PROJECT_NAME}/ DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
