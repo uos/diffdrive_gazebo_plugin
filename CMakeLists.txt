@@ -6,6 +6,8 @@ project(diffdrive_gazebo_plugin)
 
 find_package(catkin REQUIRED COMPONENTS gazebo_ros nav_msgs geometry_msgs sensor_msgs)
 
+find_package(Boost REQUIRED COMPONENTS thread)
+
 # Set the build type.  Options are:
 #  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
 #  Debug          : w/ debug symbols, w/o optimization
@@ -19,6 +21,7 @@ find_package(gazebo REQUIRED)
 include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
 catkin_package(
+    DEPENDS Boost
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
     LIBRARIES gazebo_ros_diffdrive_uos
     INCLUDE_DIRS include
@@ -26,6 +29,7 @@ catkin_package(
 
 add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
 add_dependencies(gazebo_ros_diffdrive_uos ${catkin_EXPORTED_TARGETS})
+target_link_libraries(gazebo_ros_diffdrive_uos ${catkin_LIBRARIES} ${Boost_LIBRARIES})
 
 install(TARGETS gazebo_ros_diffdrive_uos LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
 
