@@ -50,20 +50,20 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   // TODO: could be 'node_namespace' now
   this->node_namespace_ = "/";
   if (_sdf->HasElement("robotNamespace"))
-    this->node_namespace_ = _sdf->GetElement("robotNamespace")->GetValueString() + "/";
+    this->node_namespace_ = _sdf->GetElement("robotNamespace")->Get<std::string>() + "/";
 
 
   cmd_vel_topic_name_ = "/cmd_vel";
   if (_sdf->HasElement("cmd_vel_topic_name"))
-    cmd_vel_topic_name_ = _sdf->GetElement("cmd_vel_topic_name")->GetValueString();
+    cmd_vel_topic_name_ = _sdf->GetElement("cmd_vel_topic_name")->Get<std::string>();
 
   odom_topic_name_ = "/odom";
   if (_sdf->HasElement("odom_topic_name"))
-    odom_topic_name_ = _sdf->GetElement("odom_topic_name")->GetValueString();
+    odom_topic_name_ = _sdf->GetElement("odom_topic_name")->Get<std::string>();
 
   joint_states_topic_name_ = "/joint_states";
   if (_sdf->HasElement("joint_states_topic_name"))
-    joint_states_topic_name_ = _sdf->GetElement("joint_states_topic_name")->GetValueString();
+    joint_states_topic_name_ = _sdf->GetElement("joint_states_topic_name")->Get<std::string>();
 
   js_.name.resize(NUM_JOINTS);
   js_.position.resize(NUM_JOINTS);
@@ -79,47 +79,47 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 
   js_.name[0] = "left_front_wheel_joint";
   if (_sdf->HasElement("left_front_wheel_joint"))
-    js_.name[0] = _sdf->GetElement("left_front_wheel_joint")->GetValueString();
+    js_.name[0] = _sdf->GetElement("left_front_wheel_joint")->Get<std::string>();
 
   js_.name[1] = "left_middle_wheel_joint";
   if (_sdf->HasElement("left_middle_wheel_joint"))
-    js_.name[1] = _sdf->GetElement("left_middle_wheel_joint")->GetValueString();
+    js_.name[1] = _sdf->GetElement("left_middle_wheel_joint")->Get<std::string>();
 
   js_.name[2] = "left_rear_wheel_joint";
   if (_sdf->HasElement("left_rear_wheel_joint"))
-    js_.name[2] = _sdf->GetElement("left_rear_wheel_joint")->GetValueString();
+    js_.name[2] = _sdf->GetElement("left_rear_wheel_joint")->Get<std::string>();
 
   js_.name[3] = "right_front_wheel_joint";
   if (_sdf->HasElement("right_front_wheel_joint"))
-    js_.name[3] = _sdf->GetElement("right_front_wheel_joint")->GetValueString();
+    js_.name[3] = _sdf->GetElement("right_front_wheel_joint")->Get<std::string>();
 
   js_.name[4] = "right_middle_wheel_joint";
   if (_sdf->HasElement("right_middle_wheel_joint"))
-    js_.name[5] = _sdf->GetElement("right_middle_wheel_joint")->GetValueString();
+    js_.name[5] = _sdf->GetElement("right_middle_wheel_joint")->Get<std::string>();
 
   js_.name[5] = "right_rear_wheel_joint";
   if (_sdf->HasElement("right_rear_wheel_joint"))
-    js_.name[5] = _sdf->GetElement("right_rear_wheel_joint")->GetValueString();
+    js_.name[5] = _sdf->GetElement("right_rear_wheel_joint")->Get<std::string>();
 
   wheel_sep_ = 0.34;
   if (_sdf->HasElement("wheel_separation"))
-    wheel_sep_ = _sdf->GetElement("wheel_separation")->GetValueDouble();
+    wheel_sep_ = _sdf->GetElement("wheel_separation")->Get<double>();
 
   turning_adaptation_ = 0.15;
   if (_sdf->HasElement("turning_adaptation"))
-    turning_adaptation_ = _sdf->GetElement("turning_adaptation")->GetValueDouble();
+    turning_adaptation_ = _sdf->GetElement("turning_adaptation")->Get<double>();
 
   wheel_diam_ = 0.15;
   if (_sdf->HasElement("wheel_diameter"))
-    wheel_diam_ = _sdf->GetElement("wheel_diameter")->GetValueDouble();
+    wheel_diam_ = _sdf->GetElement("wheel_diameter")->Get<double>();
 
   torque_ = 4.0;
   if (_sdf->HasElement("torque"))
-    torque_ = _sdf->GetElement("torque")->GetValueDouble();
+    torque_ = _sdf->GetElement("torque")->Get<double>();
 
   max_velocity_ = 4.0;
   if (_sdf->HasElement("max_velocity"))
-    max_velocity_ = _sdf->GetElement("max_velocity")->GetValueDouble();
+    max_velocity_ = _sdf->GetElement("max_velocity")->Get<double>();
 
 
   if (!ros::isInitialized())
@@ -149,7 +149,7 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
   odom_pose_[2] = 0.0;
 
   // Get then name of the parent model
-  std::string modelName = _sdf->GetParent()->GetValueString("name");
+  std::string modelName = _sdf->GetParent()->Get<std::string>("name");
 
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
