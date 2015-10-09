@@ -1,6 +1,6 @@
 # Catkin User Guide: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/user_guide.html
 # Catkin CMake Standard: http://www.ros.org/doc/groovy/api/catkin/html/user_guide/standards.html
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.12)
 project(diffdrive_gazebo_plugin)
 # Load catkin and all dependencies required for this package
 
@@ -18,14 +18,16 @@ find_package(Boost REQUIRED COMPONENTS thread)
 
 find_package(gazebo REQUIRED)
 
-include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
-
 catkin_package(
     DEPENDS Boost
     CATKIN_DEPENDS gazebo_ros nav_msgs geometry_msgs sensor_msgs
     LIBRARIES gazebo_ros_diffdrive_uos
     INCLUDE_DIRS include
 )
+
+add_compile_options(-std=c++11)
+
+include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
 add_library(gazebo_ros_diffdrive_uos src/gazebo_ros_diffdrive_uos.cpp)
 add_dependencies(gazebo_ros_diffdrive_uos ${catkin_EXPORTED_TARGETS})
