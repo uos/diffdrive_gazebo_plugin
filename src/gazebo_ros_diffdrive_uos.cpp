@@ -218,12 +218,18 @@ void GazeboRosDiffdrive::UpdateChild()
   for (unsigned short i = 0; i < NUM_JOINTS/2; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_left_ / (wd / 2.0));
+#if GAZEBO_MAJOR_VERSION < 5
+    joints_[i]->SetMaxForce(0, torque_);
+#endif
   }
 
   // turn right wheels
   for (unsigned short i = NUM_JOINTS/2; i < NUM_JOINTS; i++)
   {
     joints_[i]->SetVelocity(0, wheel_speed_right_ / (wd / 2.0));
+#if GAZEBO_MAJOR_VERSION < 5
+    joints_[i]->SetMaxForce(0, torque_);
+#endif
   }
 
   nav_msgs::Odometry odom;
