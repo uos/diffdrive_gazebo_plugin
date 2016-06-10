@@ -25,7 +25,7 @@ catkin_package(
     INCLUDE_DIRS include
 )
 
-add_compile_options(-std=c++11)
+add_compile_options(${GAZEBO_CXX_FLAGS})
 
 include_directories(${GAZEBO_INCLUDE_DIRS} ${catkin_INCLUDE_DIRS} include)
 
