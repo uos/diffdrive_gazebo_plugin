@@ -14,6 +14,8 @@ enum
   LEFT = 1, RIGHT = 4
 };
 
+const double gazebo::GazeboRosDiffdrive::CMD_VEL_TIMEOUT = 0.6;
+
 GazeboRosDiffdrive::GazeboRosDiffdrive() :
   wheel_speed_right_(0.0),
   wheel_speed_left_(0.0)

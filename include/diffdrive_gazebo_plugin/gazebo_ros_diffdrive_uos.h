@@ -25,7 +25,7 @@ public:
 
 private:
   static const size_t NUM_JOINTS = 6;
-  static constexpr double CMD_VEL_TIMEOUT = 0.6;
+  static const double CMD_VEL_TIMEOUT;
 
   void OnCmdVel(const geometry_msgs::TwistConstPtr &msg);
 
