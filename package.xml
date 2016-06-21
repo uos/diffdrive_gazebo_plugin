@@ -14,14 +14,12 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <!-- Dependencies needed to compile this package. -->
-  <build_depend>gazebo</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
-  <run_depend>gazebo</run_depend>
   <run_depend>gazebo_ros</run_depend>
   <run_depend>nav_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
