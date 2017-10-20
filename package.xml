@@ -1,6 +1,6 @@
 <package>
   <name>diffdrive_gazebo_plugin</name>
-  <version>0.0.2</version>
+  <version>0.0.3</version>
   <description>This package provides Gazebo plugins for differential drive robots. It is based on turtlebot_gazebo_plugins by Nate Koenig.</description>
   <maintainer email="mguenthe@uni-osnabrueck.de">Martin Guenther</maintainer>
 
