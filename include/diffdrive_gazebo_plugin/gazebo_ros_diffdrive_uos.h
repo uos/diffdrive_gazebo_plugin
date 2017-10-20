@@ -24,7 +24,6 @@ public:
   virtual void UpdateChild();
 
 private:
-  static const size_t NUM_JOINTS = 6;
   static const double CMD_VEL_TIMEOUT;
 
   void OnCmdVel(const geometry_msgs::TwistConstPtr &msg);
@@ -41,6 +40,9 @@ private:
   std::string cmd_vel_topic_name_;
   std::string odom_topic_name_;
   std::string joint_states_topic_name_;
+
+  size_t num_joints_;
+  size_t left, right;
 
   /// Separation between the wheels
   float wheel_sep_;
@@ -64,7 +66,7 @@ private:
   float wheel_speed_right_;
   float wheel_speed_left_;
 
-  physics::JointPtr joints_[NUM_JOINTS];
+  std::vector<physics::JointPtr> joints_;
 
   // Simulation time of the last update
   common::Time prev_update_time_;
