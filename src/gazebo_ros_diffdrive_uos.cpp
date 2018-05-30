@@ -181,7 +181,11 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
     max_velocity_ = _sdf->GetElement("max_velocity")->Get<double>();
 
   //initialize time and odometry position
+#if GAZEBO_MAJOR_VERSION > 8
+  prev_update_time_ = last_cmd_vel_time_ = this->my_world_->SimTime();
+#else
   prev_update_time_ = last_cmd_vel_time_ = this->my_world_->GetSimTime();
+#endif
   odom_pose_[0] = 0.0;
   odom_pose_[1] = 0.0;
   odom_pose_[2] = 0.0;
@@ -200,7 +204,11 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 
 void GazeboRosDiffdrive::UpdateChild()
 {
+#if GAZEBO_MAJOR_VERSION > 8
+  common::Time time_now = this->my_world_->SimTime();
+#else
   common::Time time_now = this->my_world_->GetSimTime();
+#endif
   common::Time step_time = time_now - prev_update_time_;
   prev_update_time_ = time_now;
 
@@ -244,9 +252,17 @@ void GazeboRosDiffdrive::UpdateChild()
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
 
+#if GAZEBO_MAJOR_VERSION > 8
+  if (this->my_world_->SimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
+#else
   if (this->my_world_->GetSimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
+#endif
   {
+#if GAZEBO_MAJOR_VERSION > 8
+    ROS_DEBUG("gazebo_ros_diffdrive_uos: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->SimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
+#else
     ROS_DEBUG("gazebo_ros_diffdrive_uos: cmd_vel timeout - current: %f, last cmd_vel: %f, timeout: %f", this->my_world_->GetSimTime().Double(), last_cmd_vel_time_.Double(), common::Time(CMD_VEL_TIMEOUT).Double());
+#endif
     wheel_speed_left_ = wheel_speed_right_ = 0.0;
   }
 
@@ -312,7 +328,11 @@ void GazeboRosDiffdrive::UpdateChild()
 
   for (size_t i = 0; i < num_joints_; ++i)
   {
+#if GAZEBO_MAJOR_VERSION > 8
+    js_.position[i] = joints_[i]->Position(0);
+#else
     js_.position[i] = joints_[i]->GetAngle(0).Radian();
+#endif
     js_.velocity[i] = joints_[i]->GetVelocity(0);
   }
 
@@ -321,7 +341,11 @@ void GazeboRosDiffdrive::UpdateChild()
 
 void GazeboRosDiffdrive::OnCmdVel(const geometry_msgs::TwistConstPtr &msg)
 {
+#if GAZEBO_MAJOR_VERSION > 8
+  last_cmd_vel_time_ = this->my_world_->SimTime();
+#else
   last_cmd_vel_time_ = this->my_world_->GetSimTime();
+#endif
   double vr, va;
   vr = msg->linear.x;
   va = msg->angular.z;
