@@ -182,9 +182,9 @@ void GazeboRosDiffdrive::Load(physics::ModelPtr _parent, sdf::ElementPtr _sdf )
 
   //initialize time and odometry position
 #if GAZEBO_MAJOR_VERSION > 8
-    prev_update_time_ = last_cmd_vel_time_ = this->my_world_->SimTime();
+  prev_update_time_ = last_cmd_vel_time_ = this->my_world_->SimTime();
 #else
-    prev_update_time_ = last_cmd_vel_time_ = this->my_world_->GetSimTime();
+  prev_update_time_ = last_cmd_vel_time_ = this->my_world_->GetSimTime();
 #endif
   odom_pose_[0] = 0.0;
   odom_pose_[1] = 0.0;
@@ -251,6 +251,7 @@ void GazeboRosDiffdrive::UpdateChild()
   odom_vel_[0] = dr / step_time.Double();
   odom_vel_[1] = 0.0;
   odom_vel_[2] = da / step_time.Double();
+
 #if GAZEBO_MAJOR_VERSION > 8
   if (this->my_world_->SimTime() > last_cmd_vel_time_ + common::Time(CMD_VEL_TIMEOUT))
 #else
